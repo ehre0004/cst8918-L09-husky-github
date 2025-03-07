@@ -34,7 +34,7 @@ jobs:
               echo "CHECK_STATUS=1" >> $GITHUB_ENV
             fi
           done
-      - name: Terraform validate
+      - name: Terraform validate check
         id: validate
         working-directory: ./infrastructure
         run: |
