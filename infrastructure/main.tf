@@ -5,7 +5,7 @@ resource "azurerm_resource_group" "rg" {
 }
 
 # Create a Storage account
-resourcea "azurerm_storage_account" "terraform_state" {
+resource "azurerm_storage_account" "terraform_state" {
   name                     = "${var.storage_account_name}${var.labelPrefix}"
   resource_group_name      = azurerm_resource_group.rg.name
   location                 = azurerm_resource_group.rg.location
@@ -21,5 +21,5 @@ resourcea "azurerm_storage_account" "terraform_state" {
 resource "azurerm_storage_container" "terraform_state" {
   name                  = var.container_name
   storage_account_name  = azurerm_storage_account.terraform_state.name
-  container_access_type = "public"
+  container_access_type = "container"
 }
