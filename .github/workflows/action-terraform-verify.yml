@@ -14,10 +14,6 @@ jobs:
     name: terraform fmt check
     outputs:
       CHECK_STATUS: "${{ env.CHECK_STATUS }}"
-    run:
-       shell: bash
-       # We keep Terraform files in the terraform directory.
-       working-directory: ./infrastructure
     steps:
       - uses: actions/checkout@v3
         with:
@@ -62,8 +58,7 @@ jobs:
           if ! tflint -f compact; then
             echo "::error::❌ Tflint failed"
             echo "CHECK_STATUS=1" >> $GITHUB_ENV
-          fi
-          
+          fi     
       - name: Process check
         if: always()
         run: 
