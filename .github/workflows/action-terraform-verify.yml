@@ -26,7 +26,7 @@ jobs:
         run: terraform init
       - name: Terraform Format Check
         id: fmt
-        run: EXIT_CODE=0
+        run: |
           git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '\.tf$' | while read file; do
             echo "Checking terraform fmt on ${file}..."
             if [ -f "$file" ] && ! terraform fmt -check "$file"; then
@@ -34,7 +34,6 @@ jobs:
               echo "CHECK_STATUS=1" >> $GITHUB_ENV
             fi
           done
-          exit $EXIT_CODE
       - name: Validate terraform fmt
         id: validate
         working-directory: ./infrastructure
