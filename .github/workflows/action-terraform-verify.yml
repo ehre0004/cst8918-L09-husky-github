@@ -20,7 +20,7 @@ jobs:
       - name: Configure terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.6
+          terraform_version: 1.2.4
       - name: Terraform Init
         id: init
         run: terraform init
@@ -34,7 +34,7 @@ jobs:
               echo "CHECK_STATUS=1" >> $GITHUB_ENV
             fi
           done
-      - name: Validate terraform fmt
+      - name: Terraform validate
         id: validate
         working-directory: ./infrastructure
         run: |
