@@ -3,6 +3,13 @@ on:
   pull_request:
     branches:
       - main
+    paths:
+      - infrastructure/**
+  pull_request:
+    branches:
+      - main
+    paths:
+      - infrastructure/**
 
 permissions:
   id-token: write
@@ -14,38 +21,57 @@ jobs:
     name: terraform fmt check
     outputs:
       CHECK_STATUS: "${{ env.CHECK_STATUS }}"
+    run:
+       shell: bash
+       # We keep Terraform files in the terraform directory.
+       working-directory: ./infrastructure
     steps:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 2
-      - name: Fetch changed files
-        id: pr_files
-        uses: jitterbit/get-changed-files@v1
-        with:
-          format: "space-delimited"
       - name: Configure terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.2.4
-      - name: Validate terraform fmt (added_modified)
-        run: |
-          set +e
-
-          echo "CHECK_STATUS=0" >> $GITHUB_ENV
-
-          for changed_file in ${{ steps.pr_files.outputs.added_modified }}; do
-            echo "Checking terraform fmt on ${changed_file}..."
-
-            if [[ $changed_file == *.tf ]]; then
-              terraform fmt -check $changed_file
-              FMT_STATUS=$(echo $?)
-
-              if [[ $FMT_STATUS -ne 0 ]]; then
-                echo "❌ terraform fmt failed - ${changed_file}" >> $GITHUB_STEP_SUMMARY
-                echo "CHECK_STATUS=1" >> $GITHUB_ENV
-              fi
+          terraform_version: 1.5.6
+      - name: Terraform Init
+        id: init
+        run: terraform init
+      - name: Terraform Format Check
+        id: fmt
+        run: EXIT_CODE=0
+          git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '\.tf$' | while read file; do
+            echo "Checking terraform fmt on ${file}..."
+            if [ -f "$file" ] && ! terraform fmt -check "$file"; then
+              echo "::error::❌ Terraform formatting failed for ${file}"
+              echo "CHECK_STATUS=1" >> $GITHUB_ENV
             fi
           done
+          exit $EXIT_CODE
+      - name: Validate terraform fmt
+        id: validate
+        working-directory: ./infrastructure
+        run: |
+          if ! terraform validate; then
+            echo "::error::❌ Terraform validate failed"
+            echo "CHECK_STATUS=1" >> $GITHUB_ENV
+          fi
+      - name: Tflint setup
+        uses: terraform-linters/setup-tflint@v4
+        with:
+          tflint_version: v0.52.0
+      - name: Show version
+        run: tflint --version
+      - name: Init tflint
+        working-directory: ./infrastructure
+        run: tflint --init
+      - name: Run TFLint
+        run: |
+          if ! tflint -f compact; then
+            echo "::error::❌ Tflint failed"
+            echo "CHECK_STATUS=1" >> $GITHUB_ENV
+          fi
+          
       - name: Process check
         if: always()
-        run: exit $CHECK_STATUS
+        run: 
+          exit $CHECK_STATUS
