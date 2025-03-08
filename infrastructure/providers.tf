@@ -8,10 +8,6 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 3.50"
     }
-    cloudinit = {
-      source  = "hashicorp/cloudinit"
-      version = "2.3.3"
-    }
   }
 
 }
@@ -20,8 +16,4 @@ terraform {
 provider "azurerm" {
   # Leave the features block empty to accept all defaults
   features {}
-}
-
-provider "cloudinit" {
-  # Configuration options
 }
