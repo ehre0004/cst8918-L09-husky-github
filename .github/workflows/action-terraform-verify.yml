@@ -20,28 +20,28 @@ jobs:
       - name: Configure terraform
         uses: hashicorp/setup-terraform@v2
         with:
-          terraform_version: 1.5.6
+          terraform_version: 1.2.4
       - name: Terraform Init
         id: init
-        run: terraform init
+        working-directory: ./infrastructure
+        run:  terraform init --upgrade
       - name: Terraform Format Check
         id: fmt
-        run: EXIT_CODE=0
+        run: |
           git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.event.pull_request.head.sha }} | grep '\.tf$' | while read file; do
             echo "Checking terraform fmt on ${file}..."
             if [ -f "$file" ] && ! terraform fmt -check "$file"; then
               echo "::error::❌ Terraform formatting failed for ${file}"
-              echo "CHECK_STATUS=1" >> $GITHUB_ENV
+              exit 1
             fi
           done
-          exit $EXIT_CODE
-      - name: Validate terraform fmt
+      - name: Terraform validate check
         id: validate
         working-directory: ./infrastructure
         run: |
           if ! terraform validate; then
             echo "::error::❌ Terraform validate failed"
-            echo "CHECK_STATUS=1" >> $GITHUB_ENV
+            exit 1
           fi
       - name: Tflint setup
         uses: terraform-linters/setup-tflint@v4
@@ -56,9 +56,5 @@ jobs:
         run: |
           if ! tflint -f compact; then
             echo "::error::❌ Tflint failed"
-            echo "CHECK_STATUS=1" >> $GITHUB_ENV
-          fi     
-      - name: Process check
-        if: always()
-        run: 
-          exit $CHECK_STATUS
+            exit 1
+          fi
